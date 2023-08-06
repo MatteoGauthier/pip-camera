@@ -45,7 +45,6 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
     const drawOnCanvas = (image: any, width: number, height: number) => {
-      console.log(image)
       // MediaStream's video size may change over time
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width
@@ -89,7 +88,20 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
 
         const mirrored = mirrorStream(stream)
 
-        if (mirroredVideoRef.current && mirrored) mirroredVideoRef.current!.srcObject = mirrored
+        const canvas = mirrorCanvasRef.current
+        if (!canvas) return
+        // first initialize a context
+        const ctx = canvas.getContext("2d") // or whatever ('webgl', 'webgl2' ...)
+        // then you can get the stream
+        const canvasStream = canvas.captureStream(30)
+        // const $video = $('#video');
+        // $video[0].srcObject = stream;
+        // $video[0].play();
+
+        if (mirroredVideoRef.current && canvasStream) {
+          mirroredVideoRef.current!.srcObject = canvasStream
+          mirroredVideoRef.current.play()
+        }
       } catch (error) {
         console.error("Error accessing camera:", error)
       }
@@ -105,10 +117,14 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
   const togglePictureInPicture = useCallback(() => {
     if (document.pictureInPictureElement) {
       document.exitPictureInPicture()
-    } else if (document.pictureInPictureEnabled && mirroredVideoRef.current) {
-      mirroredVideoRef.current.requestPictureInPicture()
+    } else if (document.pictureInPictureEnabled) {
+      if (isMirrored && mirroredVideoRef.current) {
+        mirroredVideoRef.current.requestPictureInPicture()
+      } else if (videoRef.current) {
+        videoRef.current.requestPictureInPicture()
+      }
     }
-  }, [])
+  }, [isMirrored])
 
   return (
     <div>
@@ -121,24 +137,6 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
             </option>
           ))}
         </select>
-      </div>
-      <div>
-        <h2>Default video</h2>
-        <video
-          ref={videoRef}
-          className={clsx("transform", isMirrored ? "-scale-x-100" : "scale-x-100")}
-          width={width}
-          height={height}
-        />
-
-        <h2>Hidden video used for converting video to canvas to video</h2>
-        <video ref={hiddenVideoRef} className="" width={width} height={height}></video>
-
-        <h2>Mirrored Video using canvas</h2>
-        <video ref={mirroredVideoRef} className="" width={width} height={height}></video>
-
-        <h2>Canvas with video</h2>
-        <canvas ref={mirrorCanvasRef} className=""></canvas>
       </div>
       <button
         onClick={togglePictureInPicture}
@@ -166,6 +164,24 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
         </div>
       </div>
       <Switch checked={isMirrored} onCheckedChange={(e) => setIsMirrored(e)} />
+      <div>
+        <h2>Default video</h2>
+        <video
+          ref={videoRef}
+          className={clsx("transform", isMirrored ? "-scale-x-100" : "scale-x-100")}
+          width={width}
+          height={height}
+        />
+
+        <h2>Hidden video used for converting video to canvas to video</h2>
+        <video ref={hiddenVideoRef} className="" width={width} height={height}></video>
+
+        <h2>Mirrored Video using canvas</h2>
+        <video ref={mirroredVideoRef} className="" width={width} height={height}></video>
+
+        <h2>Canvas with video</h2>
+        <canvas ref={mirrorCanvasRef} className=""></canvas>
+      </div>
     </div>
   )
 }
