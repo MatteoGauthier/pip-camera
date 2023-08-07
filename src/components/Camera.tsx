@@ -3,21 +3,34 @@ import { useLocalStorage } from "react-use"
 import Switch from "./Switch"
 import clsx from "clsx"
 
-interface CameraProps {
-  width?: number
-  height?: number
-}
+const aspectRatioOptions = [
+  {
+    label: "1:1",
+    value: 1,
+  },
+  {
+    label: "3:4",
+    value: 0.75,
+  },
+  {
+    label: "16:9",
+    value: 1.7777777778,
+  },
+  {
+    label: "4:3",
+    value: 1.3333333333,
+  },
+]
 
-// @xxx not working
-
-const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
+const Camera = () => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const mirroredVideoRef = useRef<HTMLVideoElement>(null)
   const hiddenVideoRef = useRef<HTMLVideoElement>(null)
   const mirrorCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<1.7777777778 | 1 | 0.75 | number>(1)
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
-  const [selectedDeviceId, setSelectedDeviceId] = useLocalStorage<string>("preferred-camera")
-  const [isMirrored, setIsMirrored] = useState<boolean>(false)
+  const [selectedDeviceId, setSelectedDeviceId] = useLocalStorage<string>("preferred-camera", "")
+  const [isMirrored, setIsMirrored] = useLocalStorage<boolean>("is-mirrored", true)
 
   useEffect(() => {
     const video = videoRef.current
@@ -25,7 +38,6 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
     if (video) {
       const onDevicesChange = () => {
         navigator.mediaDevices.enumerateDevices().then((devices) => {
-          console.log(devices)
           const videoDevices = devices.filter((device) => device.kind === "videoinput")
           setDevices(videoDevices)
         })
@@ -35,7 +47,7 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
     }
   }, [])
 
-  function mirrorStream(stream: MediaStream) {
+  const mirrorStream = useCallback(async (stream: MediaStream) => {
     const canvas = mirrorCanvasRef.current
     if (!canvas) return
     Object.assign(canvas, {
@@ -55,10 +67,10 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
       ctx.drawImage(image, 0, 0)
     }
 
-    const vid = document.createElement("video")
+    const vid = hiddenVideoRef.current
+    if (!vid) return
     vid.srcObject = stream
-    // in case requestVideoFrameCallback is available, we use it
-    // otherwise we fallback on rAF
+
     const scheduler = vid.requestVideoFrameCallback
       ? (cb: VideoFrameRequestCallback) => vid.requestVideoFrameCallback(cb)
       : requestAnimationFrame
@@ -67,48 +79,53 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
       drawOnCanvas(vid, videoWidth, videoHeight)
       scheduler(draw)
     }
-    vid.play().then(draw)
+    await vid.play()
+    draw()
     return canvas.captureStream()
-  }
+  }, [])
+
+  const updateCameraStream = useCallback(async () => {
+    const constraints =
+      selectedDeviceId === ""
+        ? ({
+            video: { facingMode: "user", aspectRatio: selectedAspectRatio },
+            audio: false,
+          } satisfies MediaStreamConstraints)
+        : ({
+            video: { deviceId: selectedDeviceId, aspectRatio: selectedAspectRatio },
+            audio: false,
+          } satisfies MediaStreamConstraints)
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+      videoRef.current!.srcObject = stream
+      console.log("hey")
+      await videoRef.current!.play()
+
+      await mirrorStream(stream)
+
+      const canvas = mirrorCanvasRef.current
+      if (!canvas) return
+
+      const ctx = canvas.getContext("2d")
+
+      const canvasStream = ctx?.canvas.captureStream(60)
+
+      if (mirroredVideoRef.current && canvasStream) {
+        mirroredVideoRef.current!.srcObject = canvasStream
+
+        await mirroredVideoRef.current.play()
+      }
+    } catch (error) {
+      console.error("Error accessing camera:", error)
+    }
+  }, [mirrorStream, selectedAspectRatio, selectedDeviceId])
 
   useEffect(() => {
-    if (devices.length === 0) return
-
-    const updateCameraStream = async () => {
-      const constraints: MediaStreamConstraints =
-        selectedDeviceId === ""
-          ? { video: { facingMode: "user" }, audio: false }
-          : { video: { deviceId: selectedDeviceId }, audio: false }
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints)
-
-        videoRef.current!.srcObject = stream
-        videoRef.current!.play()
-
-        const mirrored = mirrorStream(stream)
-
-        const canvas = mirrorCanvasRef.current
-        if (!canvas) return
-        // first initialize a context
-        const ctx = canvas.getContext("2d") // or whatever ('webgl', 'webgl2' ...)
-        // then you can get the stream
-        const canvasStream = canvas.captureStream(30)
-        // const $video = $('#video');
-        // $video[0].srcObject = stream;
-        // $video[0].play();
-
-        if (mirroredVideoRef.current && canvasStream) {
-          mirroredVideoRef.current!.srcObject = canvasStream
-          mirroredVideoRef.current.play()
-        }
-      } catch (error) {
-        console.error("Error accessing camera:", error)
-      }
-    }
-
     updateCameraStream()
-  }, [devices.length, selectedDeviceId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAspectRatio, selectedDeviceId])
 
   const handleDeviceChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedDeviceId(event.target.value)
@@ -138,49 +155,57 @@ const Camera: React.FC<CameraProps> = ({ width = 640, height = 480 }) => {
           ))}
         </select>
       </div>
-      <button
-        onClick={togglePictureInPicture}
-        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-      >
-        Toggle PIP
-      </button>
+      <div className="flex items-center space-x-3 mb-4">
+        <button
+          onClick={togglePictureInPicture}
+          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+        >
+          Toggle PIP
+        </button>
 
-      <div className="relative inline-block w-64">
-        <select className="block appearance-none w-full px-4 py-2 pr-8 rounded-md border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          <option>640x480</option>
-          <option>1280x720</option>
-          <option>1920x1080</option>
-          <option>3840x2160</option>
-          {/* Add more options as needed */}
-        </select>
-        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-          <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              fillRule="evenodd"
-              d="M13.707 7.707a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 10.586l3.293-3.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div className="relative inline-block w-64">
+          <select
+            onChange={(e) => setSelectedAspectRatio(aspectRatioOptions[Number(e.target.value)].value)}
+            className="block appearance-none w-full px-4 py-2 pr-8 rounded-md border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {aspectRatioOptions.map((option, idx) => (
+              <option key={option.label} value={idx}>
+                {option.label}
+              </option>
+            ))}
+            {/* Add more options as needed */}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+            <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M13.707 7.707a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 10.586l3.293-3.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
         </div>
+        <label className="flex items-center" htmlFor={"mirror-switch"}>
+          <Switch
+            checked={isMirrored}
+            id="mirror-switch"
+            name="mirror-switch"
+            onCheckedChange={(e) => setIsMirrored(e)}
+          />
+          <span>
+            <span className="ml-2">Mirror camera</span>
+          </span>
+        </label>
       </div>
-      <Switch checked={isMirrored} onCheckedChange={(e) => setIsMirrored(e)} />
+
       <div>
-        <h2>Default video</h2>
-        <video
-          ref={videoRef}
-          className={clsx("transform", isMirrored ? "-scale-x-100" : "scale-x-100")}
-          width={width}
-          height={height}
-        />
+        <video ref={videoRef} className={clsx(isMirrored ? "hidden" : "")} />
 
-        <h2>Hidden video used for converting video to canvas to video</h2>
-        <video ref={hiddenVideoRef} className="" width={width} height={height}></video>
+        <video ref={hiddenVideoRef} className="hidden"></video>
 
-        <h2>Mirrored Video using canvas</h2>
-        <video ref={mirroredVideoRef} className="" width={width} height={height}></video>
+        <video ref={mirroredVideoRef} className={clsx(isMirrored ? "" : "hidden")}></video>
 
-        <h2>Canvas with video</h2>
-        <canvas ref={mirrorCanvasRef} className=""></canvas>
+        <canvas ref={mirrorCanvasRef} className={"hidden"}></canvas>
       </div>
     </div>
   )
