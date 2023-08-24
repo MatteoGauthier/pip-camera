@@ -1,24 +1,29 @@
-import React, { useRef, useEffect, useState, useCallback } from "react"
+import React, { useRef, useEffect, useState, useCallback, Fragment } from "react"
 import { useLocalStorage } from "react-use"
 import Switch from "./Switch"
 import clsx from "clsx"
+import { Button } from "./ui/Button"
+import PipIcon from "./svgx/PIPIcon"
+import { Listbox, Transition } from "@headlessui/react"
+import { ChevronUpDownIcon } from "@heroicons/react/20/solid"
+import { CheckIcon } from "@radix-ui/react-icons"
 
 const aspectRatioOptions = [
   {
     label: "1:1",
-    value: 1,
+    value: "1",
   },
   {
     label: "3:4",
-    value: 0.75,
+    value: "0.75",
   },
   {
     label: "16:9",
-    value: 1.7777777778,
+    value: "1.7777777778",
   },
   {
     label: "4:3",
-    value: 1.3333333333,
+    value: "1.3333333333",
   },
 ]
 
@@ -27,7 +32,10 @@ const Camera = () => {
   const mirroredVideoRef = useRef<HTMLVideoElement>(null)
   const hiddenVideoRef = useRef<HTMLVideoElement>(null)
   const mirrorCanvasRef = useRef<HTMLCanvasElement>(null)
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState<1.7777777778 | 1 | 0.75 | number>(1)
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<{
+    label: string
+    value: (typeof aspectRatioOptions)[number]["value"]
+  }>(aspectRatioOptions[2])
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useLocalStorage<string>("preferred-camera", "")
   const [isMirrored, setIsMirrored] = useLocalStorage<boolean>("is-mirrored", true)
@@ -88,11 +96,11 @@ const Camera = () => {
     const constraints =
       selectedDeviceId === ""
         ? ({
-            video: { facingMode: "user", aspectRatio: selectedAspectRatio },
+            video: { facingMode: "user", aspectRatio: Number(selectedAspectRatio.value) },
             audio: false,
           } satisfies MediaStreamConstraints)
         : ({
-            video: { deviceId: selectedDeviceId, aspectRatio: selectedAspectRatio },
+            video: { deviceId: selectedDeviceId, aspectRatio: Number(selectedAspectRatio.value) },
             audio: false,
           } satisfies MediaStreamConstraints)
 
@@ -143,9 +151,36 @@ const Camera = () => {
     }
   }, [isMirrored])
 
+  const videoStyle =
+    "absolute top-0 left-0 w-full h-full rounded-lg bg-black transition-colors ease-in-out duration-300 group-hover:bg-opacity-80 bg-opacity-60 z-[2]"
+
   return (
     <div>
-      <div className="flex justify-center mb-4">
+      <div className="mb-4">
+        <button onClick={togglePictureInPicture} className="flex group relative justify-center items-center">
+          <div className="relative">
+            <div className={videoStyle}></div>
+            <video ref={videoRef} className={clsx("z-10 video-element", isMirrored ? "hidden" : "")} />
+          </div>
+
+          <video ref={hiddenVideoRef} className="hidden"></video>
+
+          <div className="relative">
+            <div className={videoStyle}></div>
+            <video ref={mirroredVideoRef} className={clsx("z-10 video-element", isMirrored ? "" : "hidden")}></video>
+          </div>
+
+          <canvas ref={mirrorCanvasRef} className={"hidden"}></canvas>
+          <div className="z-10 absolute m-auto">
+            <button className="w-auto transition-transform transform group-hover:scale-105 min-w-fit hover:opacity-100 opacity-95 px-[22px] py-[18px] bg-yellow-400/90 rounded-2xl items-center justify-center gap-2 inline-flex">
+              <PipIcon color="#000" className="h-5 w-5" />
+              <div className="text-slate-900 text-lg">Open Camera in PIP</div>
+            </button>
+          </div>
+        </button>
+      </div>
+
+      <div className="flex bg-slate-800/50 p-5 rounded-lg justify-center items-center gap-4 mb-4">
         <select className="p-2 border-2 rounded-md" value={selectedDeviceId} onChange={handleDeviceChange}>
           <option value="">Default Camera</option>
           {devices.map((device) => (
@@ -154,37 +189,28 @@ const Camera = () => {
             </option>
           ))}
         </select>
-      </div>
-      <div className="flex items-center space-x-3 mb-4">
-        <button
-          onClick={togglePictureInPicture}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Toggle PIP
-        </button>
+        <div className="h-1 w-1 rounded-full bg-white/20"></div>
+        <label htmlFor="ratio" className="space-x-3">
+          <span className="text-white">Ratio de la caméra</span>
 
-        <div className="relative inline-block w-64">
           <select
-            onChange={(e) => setSelectedAspectRatio(aspectRatioOptions[Number(e.target.value)].value)}
-            className="block appearance-none w-full px-4 py-2 pr-8 rounded-md border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            id="ratio"
+            name="ratio"
+            className="p-2 border-2 rounded-md"
+            value={aspectRatioOptions.findIndex((ar) => ar.value === selectedAspectRatio.value)}
+            onChange={(e) => setSelectedAspectRatio(aspectRatioOptions[Number(e.target.value)])}
           >
-            {aspectRatioOptions.map((option, idx) => (
-              <option key={option.label} value={idx}>
-                {option.label}
+            <option value="">Default Camera</option>
+            {aspectRatioOptions.map((ar, idx) => (
+              <option key={ar.value} value={idx}>
+                {ar.label}
               </option>
             ))}
-            {/* Add more options as needed */}
           </select>
-          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M13.707 7.707a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 10.586l3.293-3.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-        </div>
+        </label>
+
+        <div className="h-1 w-1 rounded-full bg-white/20"></div>
+
         <label className="flex items-center" htmlFor={"mirror-switch"}>
           <Switch
             checked={isMirrored}
@@ -193,19 +219,24 @@ const Camera = () => {
             onCheckedChange={(e) => setIsMirrored(e)}
           />
           <span>
-            <span className="ml-2">Mirror camera</span>
+            <span className="ml-2 text-white">Mirror camera</span>
           </span>
         </label>
       </div>
 
-      <div>
-        <video ref={videoRef} className={clsx(isMirrored ? "hidden" : "")} />
+      <div className="flex items-center justify-center space-x-3 mb-4">
+        {/* <button
+          onClick={togglePictureInPicture}
+          className="inline-flex items-center justify-center rounded px-[15px] text-[13px] leading-none h-[35px] gap-[5px] bg-violet-800/70 text-violet-100 shadow-[0_2px_10px] shadow-black/10 hover:bg-mauve3 focus:shadow-[0_0_0_2px] focus:shadow-black data-[placeholder]:text-violet-9 outline-none"
+        >
+          Toggle PIP
+        </button> */}
+        {/* <button className="w-auto min-w-fit hover:opacity-90 px-[22px] py-[18px] bg-yellow-400 bg-opacity-20 rounded-2xl items-center justify-center gap-2 inline-flex">
+          <PipIcon className="h-5 w-5" />
+          <div className="text-yellow-400 text-lg">Open Camera in PIP</div>
+        </button> */}
 
-        <video ref={hiddenVideoRef} className="hidden"></video>
-
-        <video ref={mirroredVideoRef} className={clsx(isMirrored ? "" : "hidden")}></video>
-
-        <canvas ref={mirrorCanvasRef} className={"hidden"}></canvas>
+        {/* <AspectRatioSelect items={aspectRatioOptions} onChange={(e) => setSelectedAspectRatio(Number(e))} /> */}
       </div>
     </div>
   )

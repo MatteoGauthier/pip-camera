@@ -1,3 +1,90 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 263.4 70% 50.4%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 263.4 70% 50.4%;
+    --radius: 0.5rem;
+  }
+}
+
+html {
+  background: #1a1a1a;
+}
+
+body {
+  background: linear-gradient(
+    197deg,
+    #000 0%,
+    #000 6.67%,
+    #010101 13.33%,
+    #020202 20%,
+    #040404 26.67%,
+    #070707 33.33%,
+    #0a0a0a 40%,
+    #0d0d0d 46.67%,
+    #111 53.33%,
+    #141414 60%,
+    #171717 66.67%,
+    #1a1a1a 73.33%,
+    #1c1c1c 80%,
+    #1d1d1d 86.67%,
+    #1e1e1e 93.33%,
+    #1e1e1e 100%
+  );
+}
+
+.button-light {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell,
+    Helvetica Neue, Oxygen, Fira Sans, Droid Sans, sans-serif;
+  font-size: 16px;
+  line-height: 22px;
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  justify-content: flex-end;
+  align-items: center;
+  color: #000;
+  text-shadow: 0 1px rgba(255, 255, 255, 0.2), 1px 1px 6px #fff;
+  background-color: #f9ed32;
+  background-image: linear-gradient(#fcff69, #f9ed32);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.1s ease-out;
+  display: block;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07), 0 1px 1px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(235, 166, 19, 0.48),
+    inset 0 -1px rgba(235, 166, 19, 0.23);
+  width: auto;
+  margin-left: 32px;
+}
+
+.video-element {
+  background: #ffffff40;
+  box-shadow: 0 8px 32px 0 rgba(9, 9, 14, 0.37);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
