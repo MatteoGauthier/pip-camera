@@ -157,7 +157,7 @@ const Camera = () => {
   return (
     <div>
       <div className="mb-4">
-        <button onClick={togglePictureInPicture} className="flex group relative justify-center items-center">
+        <div onClick={togglePictureInPicture} className="flex group relative justify-center items-center">
           <div className="relative">
             <div className={videoStyle}></div>
             <video ref={videoRef} className={clsx("z-10 video-element", isMirrored ? "hidden" : "")} />
@@ -177,7 +177,7 @@ const Camera = () => {
               <div className="text-slate-900 text-lg">Open Camera in PIP</div>
             </button>
           </div>
-        </button>
+        </div>
       </div>
 
       <div className="flex bg-slate-800/50 p-5 rounded-lg justify-center items-center gap-4 mb-4">
