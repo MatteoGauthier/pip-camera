@@ -180,7 +180,7 @@ const Camera = () => {
         </div>
       </div>
 
-      <div className="flex bg-slate-800/50 p-5 rounded-lg justify-center items-center gap-4 mb-4">
+      <div className="flex flex-col md:flex-row bg-slate-800/50 p-5 rounded-lg justify-center items-center gap-4 mb-4">
         <select className="p-2 border-2 rounded-md" value={selectedDeviceId} onChange={handleDeviceChange}>
           <option value="">Default Camera</option>
           {devices.map((device) => (
@@ -189,7 +189,7 @@ const Camera = () => {
             </option>
           ))}
         </select>
-        <div className="h-1 w-1 rounded-full bg-white/20"></div>
+        <div className="h-1 w-1 hidden md:block rounded-full bg-white/20"></div>
         <label htmlFor="ratio" className="space-x-3">
           <span className="text-white">Ratio de la caméra</span>
 
@@ -209,7 +209,7 @@ const Camera = () => {
           </select>
         </label>
 
-        <div className="h-1 w-1 rounded-full bg-white/20"></div>
+        <div className="h-1 w-1 hidden md:block rounded-full bg-white/20"></div>
 
         <label className="flex items-center" htmlFor={"mirror-switch"}>
           <Switch
@@ -224,20 +224,7 @@ const Camera = () => {
         </label>
       </div>
 
-      <div className="flex items-center justify-center space-x-3 mb-4">
-        {/* <button
-          onClick={togglePictureInPicture}
-          className="inline-flex items-center justify-center rounded px-[15px] text-[13px] leading-none h-[35px] gap-[5px] bg-violet-800/70 text-violet-100 shadow-[0_2px_10px] shadow-black/10 hover:bg-mauve3 focus:shadow-[0_0_0_2px] focus:shadow-black data-[placeholder]:text-violet-9 outline-none"
-        >
-          Toggle PIP
-        </button> */}
-        {/* <button className="w-auto min-w-fit hover:opacity-90 px-[22px] py-[18px] bg-yellow-400 bg-opacity-20 rounded-2xl items-center justify-center gap-2 inline-flex">
-          <PipIcon className="h-5 w-5" />
-          <div className="text-yellow-400 text-lg">Open Camera in PIP</div>
-        </button> */}
 
-        {/* <AspectRatioSelect items={aspectRatioOptions} onChange={(e) => setSelectedAspectRatio(Number(e))} /> */}
-      </div>
     </div>
   )
 }
