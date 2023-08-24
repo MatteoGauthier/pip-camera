@@ -11,6 +11,7 @@ export default function Home() {
           content="Display webcam as Picture-in-Picture to record screen with face shown, useful for creator teachers"
         />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="canonical" href="https://tinymirror.xyz" />
       </Head>
 
       <h1 className="text-7xl font-bold mb-4 font-display text-white">Tiny Mirror PIP</h1>
