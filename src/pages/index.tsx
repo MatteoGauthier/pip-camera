@@ -3,7 +3,7 @@ import Head from "next/head"
 
 const title = "Tiny Mirror - Front Camera Picture In Picture"
 
-const description = "Display webcam as Picture-in-Picture to record screen with face shown, useful for creator teachers"
+const description = "Display webcam as Picture-in-Picture to record screen with face shown, useful for creator, teachers, etc."
 
 const url = "https://tinymirror.xyz"
 
