@@ -21,10 +21,10 @@ export default function App({ Component, pageProps }: AppProps) {
       <noscript>
         <img
           alt="Shynet"
-          src="https://shynet-railway-production.up.railway.app/ingress/b8a1d84f-ddc0-4450-b677-0fffdff02070/pixel.gif"
+          src="https://shynet.squale.dev/ingress/b8a1d84f-ddc0-4450-b677-0fffdff02070/pixel.gif"
         />
       </noscript>
-      <Script src="https://shynet-railway-production.up.railway.app/ingress/b8a1d84f-ddc0-4450-b677-0fffdff02070/script.js" />
+      <Script src="https://shynet.squale.dev/ingress/b8a1d84f-ddc0-4450-b677-0fffdff02070/script.js" />
     </main>
   )
 }
